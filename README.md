@@ -9,5 +9,4 @@ Features:
 
 Technologies:
 - Python
-- Streamlit
-- SQLite
+- HTML/CSS/JS
