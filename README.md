@@ -10,3 +10,5 @@ Features:
 Technologies:
 - Python
 - HTML/CSS/JS
+- SQLite
+  
