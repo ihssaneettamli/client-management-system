@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign Up - Smart Client Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h1 class="brand">Smart Client Management</h1>
+      <p class="muted">Create your account to start managing clients.</p>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash">
+            {% for message in messages %}
+              <div>{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('signup') }}" class="auth-form">
+        
+        <label>Username</label>
+        <input type="text" name="username" placeholder="e.g. amine123" required />
+        
+        <label>Email</label>
+        <input type="email" name="email" autocomplete="email" required />
+
+        <label>Password</label>
+        <input type="password" name="password" autocomplete="new-password" required />
+
+        <button type="submit" class="btn primary">Sign Up</button>
+
+        <p class="muted">
+          Already have an account? <a href="{{ url_for('login') }}">Login</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+

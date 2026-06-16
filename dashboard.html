@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Smart Client Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-brand">Client management system</div>
+        <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
+            Manage your clients, elevate your business.
+        </p>
+            
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+            </nav>
+        <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+    </aside>
+
+    <main class="content">
+      <header class="content-header">
+        <h2>Dashboard</h2>
+        <div class="muted">
+            {% if session.get('username') and session.get('username') != 'None' %}
+                Welcome back, {{ session.get('username') }} 👋!
+            {% else %}
+                Welcome back, {{ session.get('email') }} 👋!
+            {% endif %}
+</div>
+      </header>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Overview</h3>
+          <p>This dashboard will show your client/task statistics and recent activity.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+
