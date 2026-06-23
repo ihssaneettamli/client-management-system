@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tasks - Smart Client Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">Client management system</div>
+      <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
+        Manage your clients, elevate your business.
+      </p>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('clients_list') }}">Clients</a>
+        <a href="#">Notes</a>
+      </nav>
+
+      <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+    </aside>
+
+    <main class="content">
+      <header class="content-header">
+        <h2>Tasks</h2>
+        <div class="muted">Manage tasks for your client</div>
+      </header>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash" role="alert">
+            {% for msg in messages %}
+              <div>{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if selected_client %}
+        <section class="card" style="margin-bottom:14px;">
+          <h3 style="margin-top:0;">Selected client</h3>
+          <p class="muted" style="margin-top:-8px;">
+            <b>{{ selected_client['full_name'] }}</b>
+            <span class="muted">•</span>
+            <span>{{ selected_client['email'] or '' }}</span>
+          </p>
+          <a class="btn" href="{{ url_for('clients_list') }}" style="margin-top:10px;">← Back to clients</a>
+        </section>
+      {% endif %}
+
+      <section class="grid" style="align-items:start;">
+        <!-- Filters + Add -->
+        <div class="card" style="grid-column: span 5;">
+          <h3 style="margin-bottom:6px;">Filters</h3>
+          <p class="muted" style="margin-top:-6px;">Narrow your task list.</p>
+
+          <form method="GET" class="auth-form" style="margin-top:14px;">
+            <input type="hidden" name="client_id" value="{{ selected_client_id }}" />
+
+            <label>Status</label>
+            <select name="status" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+              <option value="" {% if not status %}selected{% endif %}>All</option>
+              <option value="Pending" {% if status=='Pending' %}selected{% endif %}>Pending</option>
+              <option value="Completed" {% if status=='Completed' %}selected{% endif %}>Completed</option>
+            </select>
+
+            <label>Priority</label>
+            <select name="priority" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+              <option value="" {% if not priority %}selected{% endif %}>All</option>
+              <option value="High" {% if priority=='High' %}selected{% endif %}>High</option>
+              <option value="Medium" {% if priority=='Medium' %}selected{% endif %}>Medium</option>
+              <option value="Low" {% if priority=='Low' %}selected{% endif %}>Low</option>
+            </select>
+
+            <label>Due date</label>
+            <input type="date" name="due_date" value="{{ due_date or '' }}" />
+
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <button type="submit" class="btn primary" style="flex:1;">Apply</button>
+              <a class="btn" href="{{ url_for('tasks_list', client_id=selected_client_id) }}" style="background:transparent; border:1px solid rgba(255,255,255,0.12); display:inline-flex; align-items:center; justify-content:center;">Reset</a>
+            </div>
+          </form>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:16px 0;" />
+
+          <h3 style="margin-bottom:6px;">Add task</h3>
+          <form method="POST" action="{{ url_for('tasks_add', client_id=selected_client_id) }}" class="auth-form" style="margin-top:14px;">
+            <label>Title *</label>
+            <input name="title" required placeholder="e.g. Follow up call" />
+
+            <label>Description</label>
+            <input name="description" placeholder="Optional details" />
+
+            <label>Priority *</label>
+            <select name="priority" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+
+            <label>Status *</label>
+            <select name="status" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+            </select>
+
+            <label>Due date</label>
+            <input type="date" name="due_date" />
+
+            <button type="submit" class="btn primary" style="margin-top:12px; width:100%;">Add task</button>
+          </form>
+        </div>
+
+        <!-- Tasks table -->
+        <div class="card" style="grid-column: span 7;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+            <h3 style="margin:0;">Tasks list</h3>
+            <div class="muted">{{ (tasks|length) if tasks else 0 }} tasks</div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:12px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Due</th>
+                  <th>Created</th>
+                  <th style="width:170px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if tasks and tasks|length > 0 %}
+                  {% for t in tasks %}
+                    <tr>
+                      <td>
+                        <b>{{ t['title'] }}</b>
+                      </td>
+                      <td>{{ t['description'] or '-' }}</td>
+                      <td>
+                        {% if t['priority'] == 'High' %}
+                          <span class="badge badge-high">High</span>
+                        {% elif t['priority'] == 'Medium' %}
+                          <span class="badge badge-medium">Medium</span>
+                        {% else %}
+                          <span class="badge badge-low">Low</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if t['status'] == 'Completed' %}
+                          <span class="badge badge-completed">Completed</span>
+                        {% else %}
+                          <span class="badge badge-pending">Pending</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ t['due_date'] or '-' }}</td>
+                      <td>{{ t['created_at'] }}</td>
+                      <td>
+                        <a class="btn" href="{{ url_for('tasks_edit_get', task_id=t['id'], client_id=selected_client_id) }}" style="display:inline-block; margin-right:8px;">Edit</a>
+                        <form method="POST" action="{{ url_for('tasks_delete', task_id=t['id']) }}" style="display:inline-block;" onsubmit="return confirm('Delete this task?');">
+                          <button type="submit" class="btn" style="border-color: rgba(255,255,255,0.12);">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="7" class="muted">No tasks found.</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {% if editing_task %}
+      <section class="card" style="margin-top:14px;">
+        <h3>Edit task</h3>
+        <form method="POST" action="{{ url_for('tasks_edit_post', task_id=editing_task['id'], client_id=selected_client_id) }}" class="auth-form" style="margin-top:14px;">
+          <label>Title *</label>
+          <input name="title" required value="{{ editing_task['title'] }}" />
+
+          <label>Description</label>
+          <input name="description" value="{{ editing_task['description'] or '' }}" />
+
+          <label>Priority *</label>
+          <select name="priority" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+            <option value="High" {% if editing_task['priority']=='High' %}selected{% endif %}>High</option>
+            <option value="Medium" {% if editing_task['priority']=='Medium' %}selected{% endif %}>Medium</option>
+            <option value="Low" {% if editing_task['priority']=='Low' %}selected{% endif %}>Low</option>
+          </select>
+
+          <label>Status *</label>
+          <select name="status" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+            <option value="Pending" {% if editing_task['status']=='Pending' %}selected{% endif %}>Pending</option>
+            <option value="Completed" {% if editing_task['status']=='Completed' %}selected{% endif %}>Completed</option>
+          </select>
+
+          <label>Due date</label>
+          <input type="date" name="due_date" value="{{ editing_task['due_date'] or '' }}" />
+
+          <button type="submit" class="btn primary" style="margin-top:12px;">Save task</button>
+          <a class="btn" href="{{ url_for('tasks_list', client_id=selected_client_id) }}" style="margin-left:10px; background:transparent; border:1px solid rgba(255,255,255,0.12);">Cancel</a>
+        </form>
+      </section>
+      {% endif %}
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+
