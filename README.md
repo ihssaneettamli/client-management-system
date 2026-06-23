@@ -1,14 +1,20 @@
-# client-management-system
+# Smart Client Management System with AI Assistant
 
-Web application developed using Python and Streamlit.
+Beginner-friendly Flask app.
 
-Features:
-- Client management
+## Features (planned)
+- Authentication (signup/login/logout)
+- Client CRUD
 - Task management
-- AI assistant
+- Notes system
+- Dashboard
+- AI Assistant chatbot
 
-Technologies:
-- Python
-- HTML/CSS/JS
-- SQLite
-  
+## Setup
+```bash
+cd client-management-system
+pip install -r requirements.txt
+python app.py
+```
+
+Open: http://127.0.0.1:5000
