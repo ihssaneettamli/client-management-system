@@ -9,35 +9,62 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-        <div class="sidebar-brand">Client management system</div>
-        <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
-            Manage your clients, elevate your business.
-        </p>
-            
-        <nav class="sidebar-nav">
-            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
-            </nav>
-        <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+      <div class="sidebar-brand">Client management system</div>
+      <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
+        Manage your clients, elevate your business.
+      </p>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+        <a href="{{ url_for('clients_list') }}">Clients</a>
+        <a href="#">Notes</a>
+      </nav>
+
+      <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
     </aside>
 
     <main class="content">
       <header class="content-header">
         <h2>Dashboard</h2>
         <div class="muted">
-            {% if session.get('username') and session.get('username') != 'None' %}
-                Welcome back, {{ session.get('username') }} 👋!
-            {% else %}
-                Welcome back, {{ session.get('email') }} 👋!
-            {% endif %}
-</div>
+          {% if session.get('username') %}
+            Welcome back, {{ session.get('username') }} 👋!
+          {% else %}
+            Welcome back, {{ session.get('email') }} 👋!
+          {% endif %}
+        </div>
       </header>
 
       <div class="grid">
-        <div class="card">
-          <h3>Overview</h3>
-          <p>This dashboard will show your client/task statistics and recent activity.</p>
+        <div class="card" style="grid-column: span 6;">
+          <h3>Client overview</h3>
+          <p class="muted" style="margin-top:-8px;">Total clients (your account)</p>
+          <div style="font-size:34px; font-weight:800; margin-top:10px;">{{ total_clients or 0 }}</div>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <h3>Tasks</h3>
+          <p class="muted" style="margin-top:-8px;">Manage task lists for each client.</p>
+          <p style="margin-top:12px;">
+            Open <a href="{{ url_for('clients_list') }}">Clients</a> and select a client to manage its tasks.
+          </p>
+          <p class="muted">
+            (Next: tasks table + filters + CRUD)
+          </p>
+
+          <div class="muted">
+            Use the “Tasks” page from the sidebar once implemented.
+          </div>
+
+          <p>
+            This dashboard will show your client/task statistics and recent activity.
+
+            (In Step 3/4 we will add tasks, notes, and a real dashboard.)
+          </p>
+          <p class="muted">Start now: open <a href="{{ url_for('clients_list') }}">Clients</a> to manage your data.</p>
         </div>
       </div>
+
     </main>
   </div>
 </body>
