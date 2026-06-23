@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clients - Smart Client Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">Client management system</div>
+      <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
+        Manage your clients, elevate your business.
+      </p>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('clients_list') }}" class="active">Clients</a>
+        <a href="#">Notes</a>
+      </nav>
+
+      <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+    </aside>
+
+    <main class="content">
+      <header class="content-header">
+        <h2>Clients</h2>
+        <div class="muted">Keep your client data organized</div>
+      </header>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash" role="alert">
+            {% for msg in messages %}
+              <div>{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <section class="card" style="margin-bottom:14px;">
+        <div class="section-title" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <h3 style="margin:0;">Search clients</h3>
+        </div>
+
+            <form method="GET" action="{{ url_for('clients_list') }}" class="search-form" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by full name, company, or email"
+            value="{{ search or '' }}"
+            style="flex:1; min-width:220px;"
+          />
+
+          <input
+            type="text"
+            name="company"
+            placeholder="Filter by company (exact)"
+            value="{{ company_filter or '' }}"
+            style="flex:0 0 220px;"
+          />
+
+          <select name="sort" style="flex:0 0 200px; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}style="background: #111115; color: #ffffff;">Newest first</option>
+            <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}style="background: #111115; color: #ffffff;">Oldest first</option>
+            <option value="alpha_az" {% if sort == 'alpha_az' %}selected{% endif %}style="background: #111115; color: #ffffff;">Name (A to Z)</option>
+            <option value="alpha_za" {% if sort == 'alpha_za' %}selected{% endif %}style="background: #111115; color: #ffffff;">Name (Z to A)</option>
+          </select>
+
+          <button type="submit" class="btn primary">Apply</button>
+        </form>
+      </section>
+
+
+      <section class="grid" style="align-items:start;">
+        <div class="card" style="grid-column: span 5;">
+          {% if editing_client %}
+            <h3>Edit client</h3>
+            <p class="muted" style="margin-top:-8px;">Update the client information.</p>
+            <form method="POST" action="{{ url_for('clients_edit_post', client_id=editing_client['id']) }}" class="auth-form" style="margin-top:14px;">
+          {% else %}
+            <h3>Add client</h3>
+            <p class="muted" style="margin-top:-8px;">Create a new client record.</p>
+            <form method="POST" action="{{ url_for('clients_add') }}" class="auth-form" style="margin-top:14px;">
+          {% endif %}
+
+            <label>Full name *</label>
+            <input name="full_name" required placeholder="e.g. John Doe" value="{{ (form_data.full_name if form_data else '') }}" />
+
+            <label>Email *</label>
+            <input name="email" type="email" required placeholder="e.g. john@company.com" value="{{ (form_data.email if form_data else '') }}" />
+
+            <label>Phone *</label>
+            <input name="phone" required placeholder="e.g. +212..." value="{{ (form_data.phone if form_data else '') }}" />
+
+            <label>Company *</label>
+            <input name="company" required placeholder="e.g. Acme Inc." value="{{ (form_data.company if form_data else '') }}" />
+
+            <label>Address</label>
+            <input name="address" placeholder="e.g. Street, City" value="{{ (form_data.address if form_data else '') }}" />
+
+
+            <div style="display:flex; gap:10px; margin-top:6px;">
+              {% if editing_client %}
+                <button class="btn primary" type="submit">Save changes</button>
+                <a href="{{ url_for('clients_list') }}" class="btn" style="display:inline-flex; align-items:center; justify-content:center; background:transparent; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 14px; color:var(--text); font-weight:600; text-decoration:none;">
+                  Cancel
+                </a>
+              {% else %}
+                <button class="btn primary" type="submit">Add client</button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+
+        <div class="card" style="grid-column: span 7;">
+          <h3 style="margin-bottom:12px;">Your clients</h3>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Company</th>
+                  <th>Created</th>
+                  <th style="width:160px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if clients and clients|length > 0 %}
+                  {% for c in clients %}
+                    <tr>
+                      <td>{{ c['full_name'] }}</td>
+
+                      <td>{{ c['email'] or '-' }}</td>
+                      <td>{{ c['phone'] or '-' }}</td>
+                      <td>{{ c['company'] or '-' }}</td>
+                      <td>{{ c['created_at'] }}</td>
+                      <td>
+                        <a class="btn primary" href="{{ url_for('tasks_list', client_id=c['id']) }}" style="display:inline-block; margin-right:8px; padding: 6px 12px; font-size: 13px; background: #3b82f6;">Tasks</a>
+                        <a class="btn" href="{{ url_for('clients_edit_get', client_id=c['id']) }}" style="display:inline-block; margin-right:8px;">Edit</a>
+                        <form method="POST" action="{{ url_for('clients_delete', client_id=c['id']) }}" style="display:inline-block;" onsubmit="return confirm('Delete this client?');">
+                          <button type="submit" class="btn" style="border-color: rgba(255,255,255,0.12);">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="muted">No clients found.</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+
