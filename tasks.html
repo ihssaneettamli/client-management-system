@@ -17,7 +17,6 @@
       <nav class="sidebar-nav">
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
         <a href="{{ url_for('clients_list') }}">Clients</a>
-        <a href="#">Notes</a>
       </nav>
 
       <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
@@ -62,17 +61,18 @@
 
             <label>Status</label>
             <select name="status" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
-              <option value="" {% if not status %}selected{% endif %}>All</option>
-              <option value="Pending" {% if status=='Pending' %}selected{% endif %}>Pending</option>
-              <option value="Completed" {% if status=='Completed' %}selected{% endif %}>Completed</option>
+              <option value="" {% if not status %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">All</option>
+              <option value="Pending" {% if status=='Pending' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Pending</option>
+              <option value="In Progress" {% if status=='In Progress' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">In Progress</option>
+              <option value="Completed" {% if status=='Completed' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Completed</option>
             </select>
 
             <label>Priority</label>
             <select name="priority" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
-              <option value="" {% if not priority %}selected{% endif %}>All</option>
-              <option value="High" {% if priority=='High' %}selected{% endif %}>High</option>
-              <option value="Medium" {% if priority=='Medium' %}selected{% endif %}>Medium</option>
-              <option value="Low" {% if priority=='Low' %}selected{% endif %}>Low</option>
+              <option value="" {% if not priority %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">All</option>
+              <option value="High" {% if priority=='High' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">High</option>
+              <option value="Medium" {% if priority=='Medium' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Medium</option>
+              <option value="Low" {% if priority=='Low' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Low</option>
             </select>
 
             <label>Due date</label>
@@ -96,15 +96,16 @@
 
             <label>Priority *</label>
             <select name="priority" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              <option value="High"style="background: #1e1e24; color: #ffffff;">High</option>
+              <option value="Medium"style="background: #1e1e24; color: #ffffff;">Medium</option>
+              <option value="Low"style="background: #1e1e24; color: #ffffff;">Low</option>
             </select>
 
             <label>Status *</label>
             <select name="status" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
-              <option value="Pending">Pending</option>
-              <option value="Completed">Completed</option>
+              <option value="Pending"style="background: #1e1e24; color: #ffffff;">Pending</option>
+              <option value="In Progress" {% if status=='In Progress' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">In Progress</option>
+              <option value="Completed"style="background: #1e1e24; color: #ffffff;">Completed</option>
             </select>
 
             <label>Due date</label>
@@ -154,6 +155,8 @@
                       <td>
                         {% if t['status'] == 'Completed' %}
                           <span class="badge badge-completed">Completed</span>
+                        {% elif t['status'] == 'In Progress' %}
+                          <span class="badge badge-progress">In Progress</span>
                         {% else %}
                           <span class="badge badge-pending">Pending</span>
                         {% endif %}
@@ -191,15 +194,16 @@
 
           <label>Priority *</label>
           <select name="priority" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
-            <option value="High" {% if editing_task['priority']=='High' %}selected{% endif %}>High</option>
-            <option value="Medium" {% if editing_task['priority']=='Medium' %}selected{% endif %}>Medium</option>
-            <option value="Low" {% if editing_task['priority']=='Low' %}selected{% endif %}>Low</option>
+            <option value="High" {% if editing_task['priority']=='High' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">High</option>
+            <option value="Medium" {% if editing_task['priority']=='Medium' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Medium</option>
+            <option value="Low" {% if editing_task['priority']=='Low' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Low</option>
           </select>
 
           <label>Status *</label>
           <select name="status" style="width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text);">
-            <option value="Pending" {% if editing_task['status']=='Pending' %}selected{% endif %}>Pending</option>
-            <option value="Completed" {% if editing_task['status']=='Completed' %}selected{% endif %}>Completed</option>
+            <option value="Pending" {% if editing_task['status']=='Pending' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Pending</option>
+            <option value="In Progress" {% if editing_task['status']=='In Progress' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">In Progress</option>
+            <option value="Completed" {% if editing_task['status']=='Completed' %}selected{% endif %}style="background: #1e1e24; color: #ffffff;">Completed</option>
           </select>
 
           <label>Due date</label>
