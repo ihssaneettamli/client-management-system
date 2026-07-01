@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-
+from datetime import datetime
 from database import init_db
 from models import (
     add_client,
-    add_task,
     create_user,
     delete_client,
+    add_task,
     delete_task,
     get_client_by_id,
     get_clients_for_user,
@@ -18,7 +18,6 @@ from models import (
     update_task,
     verify_password,
 )
-
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"  # TODO: change in production
@@ -99,17 +98,161 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    """Dashboard landing page."""
+    
     if not is_logged_in(session):
-        return redirect(url_for("login"))
 
+        return redirect(url_for("login"))
+    
     user_id = session.get("user_id")
 
-    # Step-2 requirement: show total clients for this account.
+    from database import get_connection
+
+    conn = get_connection()
+    cur = conn.cursor()
+
     total_clients = len(get_clients_for_user(user_id=user_id))
 
-    return render_template("dashboard.html", total_clients=total_clients)
+    cur.execute(
+        """
+        SELECT COUNT(*) as cnt
+        FROM tasks t
+        JOIN clients c ON c.id = t.client_id
+        WHERE c.user_id = ?
+        """,
+        (user_id,),
+    )
+    total_tasks = cur.fetchone()[0] or 0
 
+    cur.execute(
+        """
+        SELECT t.status, COUNT(*) as cnt
+        FROM tasks t
+        JOIN clients c ON c.id = t.client_id
+        WHERE c.user_id = ?
+        GROUP BY t.status
+        """,
+        (user_id,),
+    )
+    status_rows = cur.fetchall() or []
+    status_counts = {row[0]: (row[1] or 0) for row in status_rows}
+
+    pending_tasks = status_counts.get("Pending", 0)
+    in_progress_tasks = status_counts.get("In Progress", 0)
+    completed_tasks = status_counts.get("Completed", 0)
+
+    cur.execute(
+        """
+        SELECT COUNT(*) as cnt
+        FROM tasks t
+        JOIN clients c ON c.id = t.client_id
+        WHERE c.user_id = ? AND t.priority = 'High'
+        """,
+        (user_id,),
+    )
+    high_priority_tasks = cur.fetchone()[0] or 0
+
+    cur.execute(
+        """
+        SELECT strftime('%Y-%m', created_at) as ym, COUNT(*) as cnt
+        FROM clients
+        WHERE user_id = ?
+        GROUP BY ym
+        ORDER BY ym ASC
+        """,
+        (user_id,),
+    )
+    month_rows = cur.fetchall() or []
+    client_months = [r[0] for r in month_rows if r[0] is not None]
+    client_month_counts = [r[1] or 0 for r in month_rows]
+
+    pie_labels = ["Pending", "In Progress", "Completed"]
+    pie_values = [
+        status_counts.get("Pending", 0),
+        status_counts.get("In Progress", 0),
+        status_counts.get("Completed", 0),
+    ]
+
+    cur.execute(
+        """
+        SELECT t.priority, COUNT(*) as cnt
+        FROM tasks t
+        JOIN clients c ON c.id = t.client_id
+        WHERE c.user_id = ?
+        GROUP BY t.priority
+        """,
+        (user_id,),
+    )
+    priority_rows = cur.fetchall() or []
+    priority_counts = {row[0]: (row[1] or 0) for row in priority_rows}
+
+    doughnut_labels = ["High", "Medium", "Low"]
+    doughnut_values = [
+        priority_counts.get("High", 0),
+        priority_counts.get("Medium", 0),
+        priority_counts.get("Low", 0),
+    ]
+
+    cur.execute(
+        """
+        SELECT id, full_name, email, created_at
+        FROM clients
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 5
+        """,
+        (user_id,),
+    )
+    recent_clients_rows = cur.fetchall() or []
+    recent_clients = [
+        {"id": r[0], "full_name": r[1], "email": r[2], "created_at": r[3]}
+        for r in recent_clients_rows
+    ]
+
+    cur.execute(
+        """
+        SELECT t.id, t.title, t.status, t.priority, t.created_at,
+               c.full_name as client_name
+        FROM tasks t
+        JOIN clients c ON c.id = t.client_id
+        WHERE c.user_id = ?
+        ORDER BY t.created_at DESC
+        LIMIT 5
+        """,
+        (user_id,),
+    )
+    recent_tasks_rows = cur.fetchall() or []
+    recent_tasks = [
+        {
+            "id": r[0],
+            "title": r[1],
+            "status": r[2],
+            "priority": r[3],
+            "created_at": r[4],
+            "client_name": r[5],
+        }
+        for r in recent_tasks_rows
+    ]
+
+    conn.close()
+
+    return render_template(
+        "dashboard.html",
+        today_date=datetime.now().strftime('%Y-%m-%d'),
+        total_clients=total_clients,
+        total_tasks=total_tasks,
+        pending_tasks=pending_tasks,
+        in_progress_tasks=in_progress_tasks,
+        completed_tasks=completed_tasks,
+        high_priority_tasks=high_priority_tasks,
+        client_months=client_months,
+        client_month_counts=client_month_counts,
+        pie_labels=pie_labels,
+        pie_values=pie_values,
+        doughnut_labels=doughnut_labels,
+        doughnut_values=doughnut_values,
+        recent_clients=recent_clients,
+        recent_tasks=recent_tasks,
+    )
 
 @app.route("/clients", methods=["GET"])
 def clients_list():
@@ -297,7 +440,7 @@ def clients_delete(client_id: int):
 
 @app.route("/tasks/<int:client_id>", methods=["GET"])
 def tasks_list(client_id: int):
-    
+    """List tasks for the selected client."""
     if not is_logged_in(session):
         return redirect(url_for("login"))
 
@@ -457,8 +600,6 @@ def tasks_delete(task_id: int):
         flash("Task deleted successfully.")
 
     return redirect(url_for("tasks_list", client_id=existing["client_id"]))
-
-
 
 
 if __name__ == "__main__":
