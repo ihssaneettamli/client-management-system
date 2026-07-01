@@ -8,7 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # ---------------------------
 
 def is_logged_in(session):
-    
     return session is not None and session.get("user_id") is not None
 
 
@@ -40,7 +39,6 @@ def create_user(username: str, email: str, password: str):
         user_id = cur.lastrowid
         return get_user_by_id(user_id)
     except sqlite3.IntegrityError:
-        # Unique constraint failed (email already exists)
         return None
     finally:
         conn.close()
@@ -49,7 +47,10 @@ def create_user(username: str, email: str, password: str):
 def get_user_by_id(user_id: int):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, username, email, password_hash, created_at FROM users WHERE id = ?", (user_id,))
+    cur.execute(
+        "SELECT id, username, email, password_hash, created_at FROM users WHERE id = ?",
+        (user_id,),
+    )
     row = cur.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -59,7 +60,10 @@ def get_user_by_email(email: str):
     """Fetch user by email."""
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, email, password_hash, created_at FROM users WHERE email = ?", (email,))
+    cur.execute(
+        "SELECT id, email, password_hash, created_at FROM users WHERE email = ?",
+        (email,),
+    )
     row = cur.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -78,12 +82,11 @@ def verify_password(user: dict, password: str) -> bool:
 # ---------------------------
 
 def _validate_email(email: str) -> bool:
-    
     return email is not None and ("@" in email) and ("." in email)
 
 
 def _validate_phone(phone: str) -> bool:
-    """Simple phone validation: digits, spaces, plus, dashes."
+    """Simple phone validation: digits, spaces, plus, dashes.
 
     Beginner-friendly rule: 7-15 digits total (after removing non-digits).
     """
@@ -99,7 +102,7 @@ def _validate_phone(phone: str) -> bool:
 def _validate_client_payload(full_name: str, email: str, phone: str, company: str, address: str | None):
     """Validate Step-2 client fields.
 
-    Required (per spec interpreted as required fields): full_name, email, phone, company.
+    Required fields: full_name, email, phone, company.
     """
     full_name = (full_name or "").strip()
     email = (email or "").strip().lower() if email is not None else None
@@ -138,7 +141,13 @@ def add_client(
     address: str | None,
 ):
     """Insert a new client for the given user."""
-    clean, err = _validate_client_payload(full_name=full_name, email=email, phone=phone, company=company, address=address)
+    clean, err = _validate_client_payload(
+        full_name=full_name,
+        email=email,
+        phone=phone,
+        company=company,
+        address=address,
+    )
     if err:
         return None, err
 
@@ -156,7 +165,6 @@ def add_client(
         client_id = cur.lastrowid
         return get_client_by_id(user_id=user_id, client_id=client_id), None
     except sqlite3.IntegrityError:
-        # UNIQUE(user_id, email) failed
         return None, "A client with this email already exists for your account."
     finally:
         conn.close()
@@ -185,15 +193,10 @@ def get_clients_for_user(
     company_filter: str | None = None,
     sort: str = "newest",
 ):
-    """List clients for a user with search + filters.
-
-    - Search fields: full_name, company, email
-    - Sort: newest/oldest by created_at
-    """
+    """List clients for a user with search + filters."""
     conn = get_connection()
     cur = conn.cursor()
 
-    # Build SQL with safe parameterization.
     params = [user_id]
     where = ["user_id = ?"]
 
@@ -209,18 +212,12 @@ def get_clients_for_user(
     if sort == "oldest":
         order_by = "created_at ASC"
     elif sort == "alpha_az":
-        order_by = "full_name ASC"   
+        order_by = "full_name ASC"
     elif sort == "alpha_za":
-        order_by = "full_name DESC"  
+        order_by = "full_name DESC"
     else:
-        order_by = "created_at DESC" 
+        order_by = "created_at DESC"
 
-    sql = f"""
-        SELECT id, full_name, email, phone, company, address, created_at, updated_at
-        FROM clients
-        WHERE {' AND '.join(where)}
-        ORDER BY {order_by}
-    """
     sql = f"""
         SELECT id, full_name, email, phone, company, address, created_at, updated_at
         FROM clients
@@ -244,7 +241,13 @@ def update_client(
     address: str | None,
 ):
     """Update a client's data if ownership matches."""
-    clean, err = _validate_client_payload(full_name=full_name, email=email, phone=phone, company=company, address=address)
+    clean, err = _validate_client_payload(
+        full_name=full_name,
+        email=email,
+        phone=phone,
+        company=company,
+        address=address,
+    )
     if err:
         return None, err
 
@@ -281,7 +284,6 @@ def update_client(
 
 
 def delete_client(user_id: int, client_id: int):
-    
     existing = get_client_by_id(user_id=user_id, client_id=client_id)
     if not existing:
         return False
@@ -298,7 +300,6 @@ def delete_client(user_id: int, client_id: int):
 # Task management helpers (Step-3)
 # ---------------------------
 
-
 def _validate_task_priority(priority: str) -> str | None:
     priority = (priority or "").strip()
     allowed = {"High", "Medium", "Low"}
@@ -306,8 +307,9 @@ def _validate_task_priority(priority: str) -> str | None:
 
 
 def _validate_task_status(status: str) -> str | None:
+    # Step-4 requirement: add In Progress status support
     status = (status or "").strip()
-    allowed = {"Pending", "Completed"}
+    allowed = {"Pending", "In Progress", "Completed"}
     return status if status in allowed else None
 
 
@@ -324,11 +326,11 @@ def _validate_task_payload(title: str, description: str, priority: str, status: 
 
     clean_status = _validate_task_status(status)
     if not clean_status:
-        return None, "Status must be Pending or Completed."
+        return None, "Status must be Pending, In Progress, or Completed."
 
     clean_due_date = None
     if due_date:
-        # Keep it simple: accept any non-empty string (frontend will send YYYY-MM-DD)
+        # frontend sends YYYY-MM-DD
         clean_due_date = due_date.strip()
 
     return {
@@ -475,13 +477,7 @@ def get_tasks_for_client(
     priority: str | None = None,
     due_date: str | None = None,
 ):
-    """List tasks for a client owned by user, with filters.
-
-    Filters (optional):
-    - status: Pending/Completed
-    - priority: High/Medium/Low
-    - due_date: exact match (YYYY-MM-DD)
-    """
+    """List tasks for a client owned by user, with filters."""
     if not _assert_client_belongs_to_user(user_id=user_id, client_id=client_id):
         return []
 
@@ -506,7 +502,6 @@ def get_tasks_for_client(
             where.append("t.due_date = ?")
             params.append(due_date)
 
-    # Always enforce ownership through join
     sql = f"""
         SELECT t.*
         FROM tasks t
