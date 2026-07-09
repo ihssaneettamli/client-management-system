@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Smart Client Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <aside class="sidebar" id="sidebar">
+
+      <button id="sidebarToggle" class="toggle-btn">☰</button>
+
+      <div class="sidebar-brand">Client management system</div>
+      <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
+        Manage your clients, elevate your business.
+      </p>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+        <a href="{{ url_for('clients_list') }}">Clients</a>
+        <a href="{{ url_for('assistant_page') }}" >Assistant</a>
+      </nav>
+
+      <div class="export-sidebar-links" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+        <a href="{{ url_for('export_csv') }}" class="btn" style="width: 100%; text-align: center; font-size: 13px; padding: 8px 0;">Export CSV</a>
+        <a href="{{ url_for('export_excel') }}" class="btn" style="width: 100%; text-align: center; font-size: 13px; padding: 8px 0;">Export Excel</a>
+        <a href="{{ url_for('export_pdf') }}" class="btn" style="width: 100%; text-align: center; font-size: 13px; padding: 8px 0;">Export PDF</a>
+      </div>
+
+      <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+
+    </aside>
+
+    <main class="content" id="mainContent">
+      <header class="content-header">
+        <div>
+          <h2 style="margin-bottom:4px;">Dashboard</h2>
+          <div class="muted">
+            {# Step-4 requirement: today's date + welcome message #}
+            {% set w = (session.get('username') or session.get('email') or 'there') %}
+            Today is <b>{{ today_date or now().strftime('%Y-%m-%d') }}</b> • Welcome, <b>{{ w }}</b> 👋
+          </div>
+        </div>
+      </header>
+
+      {# Quick actions #}
+      <section class="card dashboard-actions" style="margin-bottom:14px;">
+        <div>
+          <h3 style="margin:0;">Quick actions</h3>
+          <p class="muted" style="margin:6px 0 0 0;">Jump to common tasks.</p>
+        </div>
+        <div class="dashboard-actions__buttons">
+          <a class="btn primary" href="{{ url_for('clients_list') }}">Add Client</a>
+          <a class="btn" href="{{ url_for('clients_list') }}" style="border-color: rgba(255,255,255,0.12);">Add Task</a>
+        </div>
+      </section>
+
+      {# Statistic cards (professional layout) #}
+      <section class="grid dashboard-stats" style="align-items:stretch;">
+        <div class="stat-card" style="grid-column: span 4;">
+          <div class="stat-card__title">Total Clients</div>
+          <div class="stat-card__value">{{ total_clients or 0 }}</div>
+          <div class="stat-card__hint muted">Your account</div>
+        </div>
+
+        <div class="stat-card" style="grid-column: span 4;">
+          <div class="stat-card__title">Total Tasks</div>
+          <div class="stat-card__value">{{ total_tasks or 0 }}</div>
+          <div class="stat-card__hint muted">All statuses</div>
+        </div>
+
+        <div class="stat-card" style="grid-column: span 4;">
+          <div class="stat-card__title">High Priority Tasks</div>
+          <div class="stat-card__value">{{ high_priority_tasks or 0 }}</div>
+          <div class="stat-card__hint muted">Priority = High</div>
+        </div>
+
+        <div class="stat-card" style="grid-column: span 4;">
+          <div class="stat-card__title">Pending Tasks</div>
+          <div class="stat-card__value">{{ pending_tasks or 0 }}</div>
+          <div class="stat-card__hint muted">Needs attention</div>
+        </div>
+
+        <div class="stat-card" style="grid-column: span 4;">
+          <div class="stat-card__title">In Progress Tasks</div>
+          <div class="stat-card__value">{{ in_progress_tasks or 0 }}</div>
+          <div class="stat-card__hint muted">Currently being worked</div>
+        </div>
+
+        <div class="stat-card" style="grid-column: span 4;">
+          <div class="stat-card__title">Completed Tasks</div>
+          <div class="stat-card__value">{{ completed_tasks or 0 }}</div>
+          <div class="stat-card__hint muted">Done</div>
+        </div>
+      </section>
+
+      {# Charts #}
+      <section class="grid" style="margin-top:14px; align-items:stretch;">
+        <div class="card chart-card" style="grid-column: span 6;">
+          <div class="chart-card__header">
+            <h3 style="margin:0;">Clients added per month</h3>
+            <div class="muted">Counts by YYYY-MM</div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="clientsPerMonthChart" height="110"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card" style="grid-column: span 3;">
+          <div class="chart-card__header">
+            <h3 style="margin:0;">Tasks by status</h3>
+            <div class="muted">Pending vs In Progress vs Completed</div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="tasksByStatusChart" height="110"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card" style="grid-column: span 3;">
+          <div class="chart-card__header">
+            <h3 style="margin:0;">Tasks by priority</h3>
+            <div class="muted">High vs Medium vs Low</div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="tasksByPriorityChart" height="110"></canvas>
+          </div>
+        </div>
+      </section>
+
+      {# Charts data passed to JS (auto-updates because backend queries run every request) #}
+      <script type="application/json" id="dashboardChartData">
+        {
+          "clientsPerMonth": {
+            "labels": {{ client_months | tojson }},
+            "values": {{ client_month_counts | tojson }}
+          },
+          "tasksByStatus": {
+            "labels": {{ pie_labels | tojson }},
+            "values": {{ pie_values | tojson }}
+          },
+          "tasksByPriority": {
+            "labels": {{ doughnut_labels | tojson }},
+            "values": {{ doughnut_values | tojson }}
+          }
+        }
+      </script>
+
+
+      {# Recent activity #}
+      <section class="grid" style="margin-top:14px; align-items:start;">
+        <div class="card" style="grid-column: span 6;">
+          <div class="section-title" style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+            <h3 style="margin:0;">Recently added clients</h3>
+            <div class="muted">Last 5</div>
+          </div>
+
+          <div class="recent-list" role="list" aria-label="Recently added clients">
+            {% if recent_clients and recent_clients|length > 0 %}
+              {% for c in recent_clients %}
+                <div class="recent-item" role="listitem">
+                  <div class="recent-item__main">
+                    <div class="recent-item__title">{{ c['full_name'] }}</div>
+                    <div class="muted" style="font-size: 13px; margin-top:2px;">{{ c['email'] or '-' }}</div>
+                  </div>
+                  <div class="recent-item__meta muted">{{ c['created_at'] }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="muted">No clients yet.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <div class="section-title" style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+            <h3 style="margin:0;">Recently created tasks</h3>
+            <div class="muted">Last 5</div>
+          </div>
+
+          <div class="recent-list" role="list" aria-label="Recently created tasks">
+            {% if recent_tasks and recent_tasks|length > 0 %}
+              {% for t in recent_tasks %}
+                <div class="recent-item" role="listitem">
+                  <div class="recent-item__main">
+                    <div class="recent-item__title">{{ t['title'] }}</div>
+                    <div class="muted" style="font-size: 13px; margin-top:2px;">
+                      <b>{{ t['client_name'] }}</b> • {{ t['priority'] }} • {{ t['status'] }}
+                    </div>
+                  </div>
+                  <div class="recent-item__meta muted">{{ t['created_at'] }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="muted">No tasks yet.</div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <script>
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+
+      sidebarToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('collapsed');
+          mainContent.classList.toggle('expanded');
+      });
+    </script>
+
+  {# Floating AI button + popup (authenticated pages) #}
+  {% include 'floating_ai_button.html' %}
+  {% include 'floating_ai_popup.html' %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>
+
+
+

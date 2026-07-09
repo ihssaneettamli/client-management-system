@@ -1,0 +1,12 @@
+{# Floating AI button (FAB). Include in authenticated pages. #}
+{% if session.get('user_id') %}
+  <button
+    type="button"
+    class="floating-ai-btn"
+    aria-label="AI Assistant"
+    title="AI Assistant"
+  >
+    <span class="floating-ai-btn__icon" aria-hidden="true">🤖</span>
+  </button>
+{% endif %}
+

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Assistant - Smart Client Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <button id="sidebarToggle" class="toggle-btn">☰</button>
+
+    <div class="sidebar-brand">Client management system</div>
+    <p class="muted" style="font-size: 11px; margin-top: -10px; margin-bottom: 20px; font-style: italic;">
+      Manage your clients, elevate your business.
+    </p>
+
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('clients_list') }}">Clients</a>
+      <a href="{{ url_for('assistant_page') }}" class="active">Assistant</a>
+    </nav>
+
+     <div class="export-sidebar-links" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+      <a href="{{ url_for('export_csv') }}" class="btn" style="width: 100%; text-align: center; font-size: 13px; padding: 8px 0;">Export CSV</a>
+      <a href="{{ url_for('export_excel') }}" class="btn" style="width: 100%; text-align: center; font-size: 13px; padding: 8px 0;">Export Excel</a>
+      <a href="{{ url_for('export_pdf') }}" class="btn" style="width: 100%; text-align: center; font-size: 13px; padding: 8px 0;">Export PDF</a>
+    </div>
+
+    <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+
+  </aside>
+
+  <main class="content" id="mainContent">
+    <header class="content-header">
+      <div>
+        <h2 style="margin-bottom:4px;">AI Assistant</h2>
+        <div class="muted">Ask questions about your clients & tasks (local Ollama)</div>
+      </div>
+      <div class="muted" style="font-size:12px;">Model: <b>{{ model or 'llama3.2' }}</b></div>
+    </header>
+
+    <section class="card" style="margin-bottom: 14px;">
+      <h3 style="margin-top: 0; margin-bottom: 6px;">Quick actions</h3>
+      <p class="muted" style="margin-top:-6px;">One click generates insights using your database.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+        <button class="btn primary" type="button" onclick="assistantQuickAction('insights')">Generate Insights</button>
+        <button class="btn" type="button" onclick="assistantQuickAction('daily_summary')" style="border:var(--border);">Today’s Summary</button>
+        <button class="btn" type="button" onclick="assistantQuickAction('weekly_report')" style="border:var(--border);">Weekly Report</button>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 18px;">
+      <div id="assistantError" class="flash" style="display:none;"></div>
+
+      <div id="chatMessages" style="height: 420px; overflow:auto; padding-right: 6px; display:flex; flex-direction:column; gap: 10px;"></div>
+
+      <div id="loading" style="display:none; margin-top: 12px; align-items:center; gap:10px;">
+        <div class="muted">Thinking locally...</div>
+        <div style="width:14px; height:14px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.35); border-top-color: rgba(109, 94, 252, 0.95); animation: spin 0.8s linear infinite;"></div>
+      </div>
+
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .chat-bubble { padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); }
+        .chat-bubble.user { background: rgba(171, 162, 244, 0.359); border-color: rgba(109, 94, 252, 0.25); }
+        .chat-bubble.ai { background: rgba(246, 233, 221, 0.218); }
+        .chat-meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        .chat-text { white-space: pre-wrap; word-wrap: break-word; }
+        .assistant-input-row { display:flex; gap: 10px; margin-top: 12px; }
+        .assistant-input-row input { flex: 1; }
+      </style>
+
+      <div class="assistant-input-row">
+        <input id="assistantInput" type="text" placeholder='Ask: "How many clients do I have?"' onkeydown="assistantHandleEnter(event)" />
+        <button class="btn primary" type="button" onclick="assistantSend()">Send</button>
+        <button class="btn" type="button" onclick="(async()=>{try{const res=await fetch('/api/clear-chat',{method:'POST'});const data=await res.json();if(!res.ok){alert(data && data.error ? data.error : 'Unable to clear conversation');return;}document.getElementById('chatMessages').innerHTML='';}catch(e){alert(String(e && e.message?e.message:e));}})()">Clear Conversation</button>
+      </div>
+
+
+
+      <div class="muted" style="font-size:12px; margin-top: 10px;">
+        The assistant uses your database to answer. Avoid asking for data you don’t want exposed.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('expanded');
+    });
+  </script>
+
+  <script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+</body>
+</html>
+

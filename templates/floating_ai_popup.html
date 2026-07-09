@@ -1,0 +1,61 @@
+{# Hidden by default popup UI for the floating AI button #}
+{% if session.get('user_id') %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+<div class="floating-ai-overlay" id="floatingAiOverlay" aria-hidden="true">
+  <div class="floating-ai-popup" role="dialog" aria-modal="true" aria-label="AI Assistant">
+    <div class="floating-ai-popup__header">
+      <div class="floating-ai-popup__title">AI Assistant</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a
+          href="{{ url_for('assistant_page') }}"
+          class="btn"
+          data-floating-ai-full-assistant
+          title="Open full assistant"
+        >
+          Open Full Assistant
+        </a>
+
+        <button
+          type="button"
+          class="floating-ai-popup__close"
+          data-floating-ai-close
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      {# Hidden note: messages are managed in JS for now. #}
+    </div>
+
+    <div class="floating-ai-popup__body" id="floatingAiMessages" aria-label="Conversation" role="log">
+
+      {# Messages are managed in JS #}
+      <div class="floating-ai-msg-wrapper" id="floatingAiMessagesEmptyHint" style="display:none;"></div>
+    </div>
+
+    <form class="floating-ai-popup__footer" onsubmit="return false;">
+      <input
+        id="floatingAiInput"
+        class="input"
+        type="text"
+        placeholder='Type a question...'
+        autocomplete="off"
+      />
+      <button class="btn primary" data-floating-ai-send>Send</button>
+      <button
+        class="btn"
+        data-floating-ai-clear
+        title="Clear chat"
+      >
+        Clear
+      </button>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/floating-ai.js') }}"></script>
+
+{% endif %}
+
