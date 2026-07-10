@@ -6,7 +6,6 @@ Beginner-friendly Flask app.
 - Authentication (signup/login/logout)
 - Client CRUD
 - Task management
-- Notes system
 - Dashboard
 - AI Assistant chatbot
 
